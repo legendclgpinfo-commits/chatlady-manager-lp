@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chatlady Manager - チャットレディ事務所向け集計自動化ツール</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:      #0c0d18;
+    --bg2:     #121425;
+    --bg3:     #1a1c34;
+    --accent:  #818cf8;
+    --accent2: #a5b4fc;
+    --lavender:#c4b5fd;
+    --gold:    #fbbf7a;
+    --text:    #eef0ff;
+    --muted:   #8b90bb;
+    --border:  rgba(129,140,248,0.13);
+    --card-bg: rgba(129,140,248,0.05);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.022'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(129,140,248,0.16) 1px, transparent 1px);
+    background-size: 42px 42px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  section, nav, footer, .stats-bar, .sites-section { position: relative; z-index: 1; }
+
+  nav {
+    padding: 1.2rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(14px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(12,13,24,0.9);
+  }
+
+  .nav-logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .nav-logo span { color: var(--accent); }
+
+  .nav-badge {
+    font-size: 0.7rem;
+    background: rgba(129,140,248,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(129,140,248,0.3);
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .nav-cta {
+    background: linear-gradient(135deg, #818cf8, #c4b5fd);
+    color: #fff;
+    text-decoration: none;
+    padding: 0.55rem 1.4rem;
+    border-radius: 100px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+
+  .nav-cta:hover { opacity: 0.85; transform: translateY(-1px); }
+
+  .hero {
+    padding: 7rem 2rem 6rem;
+    text-align: center;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  .hero-eyebrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    color: var(--accent2);
+    text-transform: uppercase;
+    margin-bottom: 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .hero-eyebrow::before {
+    content: '';
+    width: 36px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent));
+    opacity: 0.6;
+  }
+
+  .hero-eyebrow::after {
+    content: '';
+    width: 36px; height: 1px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    opacity: 0.6;
+  }
+
+  h1 {
+    font-size: clamp(2.2rem, 5.5vw, 3.8rem);
+    font-weight: 900;
+    line-height: 1.2;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.5rem;
+  }
+
+  h1 em {
+    font-style: normal;
+    background: linear-gradient(135deg, #818cf8, #c4b5fd, #a5b4fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    font-size: 1.08rem;
+    color: var(--muted);
+    max-width: 560px;
+    margin: 0 auto 2.5rem;
+    line-height: 1.9;
+  }
+
+  .hero-sub strong { color: var(--text); font-weight: 700; }
+
+  .hero-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #818cf8, #c4b5fd);
+    color: #fff;
+    text-decoration: none;
+    padding: 1rem 2.2rem;
+    border-radius: 100px;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    transition: all 0.2s;
+    box-shadow: 0 0 40px rgba(129,140,248,0.22);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 60px rgba(196,181,253,0.35);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text);
+    text-decoration: none;
+    padding: 1rem 2rem;
+    border-radius: 100px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover {
+    border-color: rgba(129,140,248,0.4);
+    background: rgba(129,140,248,0.06);
+  }
+
+  .stats-bar {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 2rem;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .stat-item {
+    flex: 1;
+    min-width: 150px;
+    max-width: 260px;
+    text-align: center;
+    padding: 1.2rem 1.8rem;
+    border-right: 1px solid var(--border);
+  }
+
+  .stat-item:last-child { border-right: none; }
+
+  .stat-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #818cf8, #c4b5fd);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    margin-bottom: 0.4rem;
+  }
+
+  .stat-label { font-size: 0.8rem; color: var(--muted); letter-spacing: 0.04em; }
+
+  .section {
+    padding: 6rem 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .section-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+  }
+
+  .section-title {
+    font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.8rem;
+    line-height: 1.2;
+  }
+
+  .section-title em {
+    font-style: normal;
+    background: linear-gradient(135deg, #818cf8, #c4b5fd);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .section-sub { color: var(--muted); font-size: 1rem; max-width: 580px; line-height: 1.8; }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1px;
+    margin-top: 4rem;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  .feature-card {
+    background: var(--bg2);
+    padding: 2.8rem 2.4rem;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.25s;
+  }
+
+  .feature-card:hover { background: var(--bg3); }
+
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, #818cf8, #c4b5fd, transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .feature-card:hover::before { opacity: 1; }
+
+  .feature-card::after {
+    content: '';
+    position: absolute;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(129,140,248,0.06), transparent 70%);
+    top: -70px; right: -70px;
+    pointer-events: none;
+  }
+
+  .feat-number {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    margin-bottom: 1.2rem;
+    opacity: 0.6;
+  }
+
+  .feat-icon { font-size: 2.2rem; margin-bottom: 1.2rem; display: block; line-height: 1; }
+
+  .feat-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+  }
+
+  .feat-title strong {
+    display: block;
+    font-size: 1.65rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #818cf8, #c4b5fd);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.15;
+    margin-bottom: 0.35rem;
+  }
+
+  .feat-body { font-size: 0.9rem; color: var(--muted); line-height: 1.85; }
+
+  .feat-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 1.5rem; }
+
+  .feat-tag {
+    font-size: 0.72rem;
+    background: rgba(129,140,248,0.1);
+    color: var(--accent2);
+    border: 1px solid rgba(129,140,248,0.25);
+    padding: 4px 12px;
+    border-radius: 100px;
+  }
+
+  .safe-banner {
+    margin-top: 2.5rem;
+    background: rgba(129,140,248,0.06);
+    border: 1px solid rgba(129,140,248,0.2);
+    border-radius: 16px;
+    padding: 1.8rem 2rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1.2rem;
+  }
+
+  .safe-icon { font-size: 1.8rem; flex-shrink: 0; line-height: 1; margin-top: 3px; }
+  .safe-title { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--accent2); }
+  .safe-body { font-size: 0.87rem; color: var(--muted); line-height: 1.8; }
+
+  .sites-section {
+    padding: 5rem 2rem;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sites-inner { max-width: 900px; margin: 0 auto; text-align: center; }
+
+  .sites-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 2.5rem; }
+
+  .site-pill {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    padding: 0.65rem 1.5rem;
+    border-radius: 100px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .site-pill:hover {
+    border-color: rgba(129,140,248,0.45);
+    background: rgba(129,140,248,0.09);
+    color: var(--accent2);
+  }
+
+  .site-pill.manual { opacity: 0.55; font-size: 0.82rem; }
+
+  .steps-wrap { margin-top: 4rem; }
+
+  .step-row {
+    display: grid;
+    grid-template-columns: 70px 1fr;
+    gap: 2rem;
+    align-items: start;
+    padding: 2rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .step-row:last-child { border-bottom: none; }
+
+  .step-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 2.4rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, rgba(129,140,248,0.35), rgba(196,181,253,0.35));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+
+  .step-content h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .step-content p { font-size: 0.88rem; color: var(--muted); line-height: 1.75; }
+
+  .after-setup {
+    margin-top: 2.5rem;
+    background: rgba(129,140,248,0.05);
+    border: 1px solid rgba(129,140,248,0.18);
+    border-radius: 14px;
+    padding: 1.6rem 2rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .after-setup-icon { font-size: 1.5rem; flex-shrink: 0; line-height: 1; margin-top: 2px; }
+  .after-setup-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--accent2); }
+  .after-setup-body { font-size: 0.86rem; color: var(--muted); line-height: 1.8; }
+
+  .cta-section {
+    padding: 7rem 2rem;
+    text-align: center;
+    position: relative;
+  }
+
+  .cta-section::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 700px; height: 500px;
+    background: radial-gradient(ellipse, rgba(129,140,248,0.09) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  .cta-box {
+    max-width: 640px;
+    margin: 0 auto;
+    background: var(--bg3);
+    border: 1px solid rgba(129,140,248,0.22);
+    border-radius: 24px;
+    padding: 4rem 3rem;
+    position: relative;
+  }
+
+  .cta-box::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, rgba(129,140,248,0.22), rgba(196,181,253,0.18), transparent 60%);
+    z-index: -1;
+  }
+
+  .cta-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  .cta-title {
+    font-size: 1.9rem;
+    font-weight: 900;
+    margin-bottom: 0.8rem;
+    letter-spacing: -0.03em;
+    line-height: 1.3;
+  }
+
+  .cta-sub { color: var(--muted); font-size: 0.95rem; margin-bottom: 2.5rem; line-height: 1.8; }
+
+  .cta-price {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .price-main {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--gold);
+  }
+
+  .price-note { font-size: 0.85rem; color: var(--muted); }
+
+  .cta-note { margin-top: 1.5rem; font-size: 0.82rem; color: var(--muted); }
+  .cta-note a { color: var(--accent2); text-decoration: none; }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 2.5rem 2rem;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  footer a { color: var(--accent2); text-decoration: none; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero-eyebrow { animation: fadeUp 0.6s ease both 0s; }
+  .hero h1      { animation: fadeUp 0.6s ease both 0.1s; }
+  .hero-sub     { animation: fadeUp 0.6s ease both 0.25s; }
+  .hero-buttons { animation: fadeUp 0.6s ease both 0.38s; }
+
+  @media (max-width: 600px) {
+    .features-grid { grid-template-columns: 1fr; }
+    .stat-item { border-right: none; border-bottom: 1px solid var(--border); }
+    .stat-item:last-child { border-bottom: none; }
+    .step-row { grid-template-columns: 48px 1fr; gap: 1rem; }
+    .cta-box { padding: 2.8rem 1.5rem; }
+    .safe-banner, .after-setup { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">💹 <span>Chatlady</span>Manager</div>
+  <span class="nav-badge">v1.0.0</span>
+  <a href="https://forms.gle/UJi7UNPGAcvjwSpJ8" target="_blank" class="nav-cta">トライアル申請</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-eyebrow">For チャットレディ事務所</div>
+  <h1>毎日の集計作業、<br><em>1クリックで<br>パソコンにお任せ</em></h1>
+  <p class="hero-sub">
+    各サイトへのログイン・CSV保存・コピペ…<br>
+    その手作業、全部 Chatlady Manager がやります。<br>
+    <strong>あなたはボタンを1回押すだけ。</strong>
+  </p>
+  <div class="hero-buttons">
+    <a href="https://forms.gle/UJi7UNPGAcvjwSpJ8" target="_blank" class="btn-primary">✨ 14日間無料で試す</a>
+    <a href="#features" class="btn-secondary">機能を見る →</a>
+  </div>
+</section>
+
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-num">6</div>
+    <div class="stat-label">対応サイト数</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">1-Click</div>
+    <div class="stat-label">全サイト一括取得</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">14日</div>
+    <div class="stat-label">無料トライアル</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">自動</div>
+    <div class="stat-label">スプレッドシート反映</div>
+  </div>
+</div>
+
+<section class="section" id="features">
+  <div class="section-tag">// Key Features</div>
+  <h2 class="section-title">選ばれる3つの理由</h2>
+  <p class="section-sub">「こんなツールがほしかった」を形にしました。</p>
+
+  <div class="features-grid">
+
+    <div class="feature-card">
+      <div class="feat-number">01 / 03</div>
+      <span class="feat-icon">⚡</span>
+      <div class="feat-title">
+        <strong>集計時間ゼロへ</strong>
+        面倒な手作業を丸ごとお任せ
+      </div>
+      <p class="feat-body">
+        「各サイトにログインして、CSVをダウンロードして、スプレッドシートに貼り付ける」—
+        その繰り返しをすべてパソコンが代わりにやってくれます。
+        自動取得設定をONにすれば、毎朝起動すら不要。完全放置でOKです。
+      </p>
+      <div class="feat-tags">
+        <span class="feat-tag">全サイト一括</span>
+        <span class="feat-tag">スケジュール自動化</span>
+        <span class="feat-tag">CSV不要</span>
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feat-number">02 / 03</div>
+      <span class="feat-icon">📊</span>
+      <div class="feat-title">
+        <strong>即データ活用</strong>
+        そのまま分析・給与計算に
+      </div>
+      <p class="feat-body">
+        取得データはGoogleスプレッドシートに自動で整理して記録。
+        日付・サイト・キャスト名・ポイントがそろった状態で蓄積されるので、
+        グラフ作成・給与計算・レポートにすぐ使えます。
+      </p>
+      <div class="feat-tags">
+        <span class="feat-tag">GAS連携</span>
+        <span class="feat-tag">重複自動除外</span>
+        <span class="feat-tag">期間指定取得</span>
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feat-number">03 / 03</div>
+      <span class="feat-icon">🌸</span>
+      <div class="feat-title">
+        <strong>導入5分で完結</strong>
+        ITが苦手でも大丈夫
+      </div>
+      <p class="feat-body">
+        画面の指示に従って入力するだけのウィザード形式。
+        必要なソフトのインストールもボタン1つで自動完了。
+        別途サーバーも契約も不要。WindowsパソコンさえあればすぐOKです。
+      </p>
+      <div class="feat-tags">
+        <span class="feat-tag">Windows対応</span>
+        <span class="feat-tag">ウィザード形式</span>
+        <span class="feat-tag">サーバー不要</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="safe-banner">
+    <div class="safe-icon">🔒</div>
+    <div>
+      <div class="safe-title">プラットフォームに迷惑をかけない設計です</div>
+      <p class="safe-body">
+        Chatlady Manager は「人間が手動でやっていた操作をプログラムで代行する」ツールです。
+        サイトのシステムに直接アクセスしたり、データを書き換えたりすることはありません。
+        通常のブラウザ操作と同じ動作をするため、各プラットフォームへの影響はなく、安心してご利用いただけます。
+      </p>
+    </div>
+  </div>
+</section>
+
+<div class="sites-section">
+  <div class="sites-inner">
+    <div class="section-tag" style="text-align:center;">// Supported Sites</div>
+    <h2 class="section-title" style="text-align:center;">主要<em>6サイト</em>に対応</h2>
+    <div class="sites-grid">
+      <div class="site-pill">FANZA</div>
+      <div class="site-pill">ライブでゴーゴー</div>
+      <div class="site-pill">チャットピア</div>
+      <div class="site-pill">エンジェルライブ</div>
+      <div class="site-pill manual">マダムライブ（半自動）</div>
+      <div class="site-pill manual">ジュエルライブ（半自動）</div>
+    </div>
+    <p style="font-size:0.8rem; color:var(--muted); margin-top:1.2rem;">
+      ※ マダム・ジュエルはワンタイムパスワードが必要なため、OTP入力後に自動実行する半自動方式です
+    </p>
+  </div>
+</div>
+
+<section class="section">
+  <div class="section-tag">// How It Works</div>
+  <h2 class="section-title">導入は<em>3ステップ</em></h2>
+  <p class="section-sub">初回セットアップが完了したら、あとはツールを好きなときに起動するだけです。</p>
+
+  <div class="steps-wrap">
+    <div class="step-row">
+      <div class="step-num">01</div>
+      <div class="step-content">
+        <h3>install.bat をダブルクリックする</h3>
+        <p>必要なソフト（Python・Playwright・Chromium）を自動インストール。すでに入っていれば自動でスキップします。</p>
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">02</div>
+      <div class="step-content">
+        <h3>初回セットアップを完了する</h3>
+        <p>ウィザードに沿って事務所ID・GAS URL・各サイトのID/PWを入力するだけ。Googleスプレッドシート+GASの準備は取扱説明書に沿って約10分で完了します。</p>
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">03</div>
+      <div class="step-content">
+        <h3>「データ取得を開始」を押す</h3>
+        <p>期間を選んでボタンを1回押すだけ。これだけで全サイトのデータ取得からスプレッドシートへの記録まで完了します。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="after-setup">
+    <div class="after-setup-icon">💡</div>
+    <div>
+      <div class="after-setup-title">導入後の使い方は2パターン</div>
+      <p class="after-setup-body">
+        <strong style="color:var(--text);">手動取得</strong>：ツールを起動して好きなタイミングでボタンを押すだけ。<br>
+        <strong style="color:var(--text);">自動取得（放置OK）</strong>：取得時刻を設定しておけば、PC起動中は自動でデータ取得。毎朝起動しておくだけで集計が完了しています。<br>
+        <span style="font-size:0.82rem; opacity:0.75;">※ 自動取得はPC起動が必要です</span>
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <div class="cta-box">
+    <div class="cta-label">// Free Trial</div>
+    <h2 class="cta-title">まずは14日間、<br>無料で体験してみてください</h2>
+    <p class="cta-sub">
+      クレジットカード不要。<br>
+      ライセンスキーはメールで発行します。<br>
+      「集計が楽になった！」を実感してから、ご購入をご検討ください。
+    </p>
+    <div class="cta-price">
+      <span class="price-main">Trial 14日間 無料</span>
+      <span class="price-note">→ ライセンス購入でフル利用</span>
+    </div>
+    <a href="https://forms.gle/UJi7UNPGAcvjwSpJ8" target="_blank" class="btn-primary" style="display:inline-block; text-decoration:none;">
+      ✉️ トライアル申請する
+    </a>
+    <p class="cta-note">
+      その他お問い合わせ：<a href="mailto:legendclgpinfo@gmail.com">legendclgpinfo@gmail.com</a>
+    </p>
+  </div>
+</section>
+
+<footer>
+  <p>© 2026 LegendMuse — Chatlady Manager</p>
+  <p style="margin-top:0.6rem; font-size:0.78rem;">
+    チャットレディ個人向け成長記録アプリ →
+    <a href="https://sites.google.com/view/legendclgp/" target="_blank">ちゃレコ</a>
+  </p>
+</footer>
+
+</body>
+</html>
